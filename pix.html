@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Pix</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h2>Pagamento via Pix</h2>
+
+  <p>Copie o código abaixo ou escaneie o QR Code:</p>
+
+  <textarea id="copiaecola" rows="5" cols="60" readonly></textarea>
+
+  <h3>QR Code:</h3>
+  <canvas id="qrcode"></canvas>
+
+  <script>
+    const chavePix = "9baea928-eff1-4389-8214-ac5c8fb39e27"; // 🔁 substitua pela sua chave
+    const nomeRecebedor = "Gabriel Januário da Silva"; // 🔁 substitua pelo seu nome (até 25 caracteres)
+    const cidade = "PETRÓPOLIS"; // 🔁 substitua pela sua cidade
+    const txid = "COXINHAIMPERADOR"; // opcional: até 25 caracteres
+
+    const params = new URLSearchParams(window.location.search);
+    const valor = parseFloat(params.get("valor")).toFixed(2);
+
+    function gerarPix(valor) {
+      const chaveSize = chavePix.length.toString().padStart(2, "0");
+      const nomeSize = nomeRecebedor.length.toString().padStart(2, "0");
+      const cidadeSize = cidade.length.toString().padStart(2, "0");
+
+      let payload = `00020126420014BR.GOV.BCB.PIX01${chaveSize}${chavePix}` +
+                    `5204000053039865405${valor}5802BR59${nomeSize}${nomeRecebedor}` +
+                    `60${cidadeSize}${cidade}62070503${txid}6304`;
+
+      const crc16 = gerarCRC16(payload);
+      const copiaCola = payload + crc16;
+
+      document.getElementById("copiaecola").value = copiaCola;
+
+      QRCode.toCanvas(document.getElementById("qrcode"), copiaCola, error => {
+        if (error) console.error(error);
+      });
+    }
+
+    function gerarCRC16(str) {
+      let crc = 0xFFFF;
+      for (let i = 0; i < str.length; i++) {
+        crc ^= str.charCodeAt(i) << 8;
+        for (let j = 0; j < 8; j++) {
+          crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+        }
+      }
+      return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, "0");
+    }
+
+    gerarPix(valor);
+  </script>
+</body>
+</html>
